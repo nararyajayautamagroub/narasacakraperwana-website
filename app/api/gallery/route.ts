@@ -1,0 +1,1 @@
+import {NextResponse} from "next/server"; import {db} from "@/lib/db"; export async function GET(){return NextResponse.json({gallery:await db.galleryItem.findMany({orderBy:{createdAt:"desc"}})})}
