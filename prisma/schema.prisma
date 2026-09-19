@@ -1,0 +1,13 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
+enum ApplicationStatus { PENDING REVIEW ACCEPTED REJECTED }
+enum EventStatus { SCHEDULED ONGOING FINISHED CANCELLED }
+enum FleetStatus { ACTIVE MAINTENANCE INACTIVE }
+model Division { id String @id @default(cuid()); slug String @unique; name String; category String; icon String; description String; members Int @default(0); platforms String[]; applications Recruitment[]; fleet Fleet[]; events Event[]; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt }
+model Recruitment { id String @id @default(cuid()); name String; username String; simulator String; experience String @default(""); reason String; status ApplicationStatus @default(PENDING); notes String @default(""); divisionId String; division Division @relation(fields:[divisionId],references:[id],onDelete:Restrict); createdAt DateTime @default(now()); updatedAt DateTime @updatedAt; @@index([status]); @@index([divisionId]) }
+model Event { id String @id @default(cuid()); title String; divisionId String; division Division @relation(fields:[divisionId],references:[id],onDelete:Restrict); platform String; description String; startsAt DateTime; status EventStatus @default(SCHEDULED); createdAt DateTime @default(now()); updatedAt DateTime @updatedAt; @@index([startsAt]) }
+model Fleet { id String @id @default(cuid()); code String @unique; divisionId String; division Division @relation(fields:[divisionId],references:[id],onDelete:Restrict); type String; platform String; unitName String; status FleetStatus @default(ACTIVE); notes String @default(""); createdAt DateTime @default(now()); updatedAt DateTime @updatedAt; @@index([divisionId]); @@index([status]) }
+model News { id String @id @default(cuid()); slug String @unique; title String; excerpt String; content String; published Boolean @default(false); publishedAt DateTime?; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt; @@index([published,publishedAt]) }
+model GalleryItem { id String @id @default(cuid()); title String; imageUrl String; category String @default("general"); alt String; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt }
+model ContactMessage { id String @id @default(cuid()); name String; contact String; subject String; message String; handled Boolean @default(false); createdAt DateTime @default(now()); @@index([handled]) }
+model SiteSetting { key String @id; value String; updatedAt DateTime @updatedAt }
