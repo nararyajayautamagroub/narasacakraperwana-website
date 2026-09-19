@@ -1,0 +1,3 @@
+import { z } from "zod";
+export const recruitmentSchema=z.object({name:z.string().trim().min(2).max(80),username:z.string().trim().min(2).max(80),divisionSlug:z.string().trim().min(2).max(80),simulator:z.string().trim().min(2).max(100),experience:z.string().trim().max(2000).optional().default(""),reason:z.string().trim().min(10).max(2000),agreed:z.boolean().refine(Boolean)});
+export const contactSchema=z.object({name:z.string().trim().min(2).max(80),contact:z.string().trim().min(3).max(120),subject:z.string().trim().min(3).max(120),message:z.string().trim().min(10).max(4000)});
