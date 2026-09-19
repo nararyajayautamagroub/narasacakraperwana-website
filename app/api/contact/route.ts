@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server"; import {db} from "@/lib/db"; import {contactSchema} from "@/lib/validation";
+export async function POST(request:Request){try{const p=contactSchema.parse(await request.json());const message=await db.contactMessage.create({data:p,select:{id:true,createdAt:true}});return NextResponse.json({ok:true,message},{status:201})}catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Data tidak valid."},{status:400})}}
