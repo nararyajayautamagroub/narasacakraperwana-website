@@ -110,7 +110,7 @@ async function syncGitHub(){
   return repos.length;
 }
 
-export async function runScraper(){
+export function validateScraperConfig(){const sources=parseEnvSources();for(const source of sources){if(!source.key||!source.url)throw new Error("Setiap scraper source wajib memiliki key dan url.");allowedHost(source.url);if(!["html","rss","json"].includes(source.kind))throw new Error(`Jenis scraper tidak didukung: ${source.kind}`);}return {sources:sources.map(source=>({key:source.key,name:source.name,url:source.url,kind:source.kind}))};}\n\nexport async function runScraper(){
   const envSources=parseEnvSources();
   for(const source of envSources){
     await db.scrapeSource.upsert({where:{key:source.key},update:{name:source.name,url:source.url,kind:source.kind,selector:source.selector,titleSelector:source.titleSelector,dateSelector:source.dateSelector,linkSelector:source.linkSelector,imageSelector:source.imageSelector},create:{key:source.key,name:source.name,url:source.url,kind:source.kind,selector:source.selector,titleSelector:source.titleSelector,dateSelector:source.dateSelector,linkSelector:source.linkSelector,imageSelector:source.imageSelector}});
