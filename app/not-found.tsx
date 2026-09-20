@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function NotFound(){return <main><div className="container page-head"><div className="eyebrow">404</div><h1 className="title">Halaman tidak ditemukan.</h1><p className="lead">Rute yang diminta tidak tersedia atau sudah dipindahkan.</p><Link className="btn btn-primary" href="/">KEMBALI KE HOME →</Link></div></main>}
