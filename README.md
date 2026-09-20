@@ -3,43 +3,75 @@
 Website PO Virtual / Virtual Transportation Community NARASA CAKRA PERWANA.
 
 ## Implemented
+
 - Next.js App Router + TypeScript
-- Responsive dark/red UI
-- 7 division directory and detail pages
-- Recruitment form with PostgreSQL persistence API
-- Events and Fleet API
-- News and Gallery pages/API
-- Contact form/API
-- Prisma PostgreSQL schema and environment template
-- Admin dashboard foundation
-- SEO metadata, sitemap, robots
+- White background + pink accent visual system
+- Light, consistent shadows
+- Animated pink buttons with hover, shine, press, focus and disabled states
+- Responsive navigation with working `=` hamburger menu
+- 7 official division directory + detail pages
+- Recruitment form -> validation -> API -> PostgreSQL
+- Events and Fleet pages read operational database
+- News, Gallery, Contact
+- Prisma schema + seed
+- Live GitHub repository monitor
+- Public repository metadata + latest commit + GitHub Actions status
+- Admin-only repository view for authenticated GitHub-owned repositories
+- Runtime error page, loading state, 404 page, health endpoint
 - GitHub Actions CI
 
-## Still required before public production
-- Admin authentication and RBAC
-- Admin CRUD for events, fleet, news and gallery
-- Object storage/CDN
-- Discord/WhatsApp/email notifications
-- Rate limiting/CAPTCHA
-- Audit log and database backup
-- Production database migration and E2E tests
+## Data accuracy policy
 
-## Divisions
-1. CERMATA INDAH — Pariwisata
-2. LENCARA TRANS — Pariwisata
-3. CERMATA ABADI — AKAP/AKDP & Bus Karyawan
-4. NUSAMATA INDAH — AKAP/AKDP & Bus Karyawan
-5. CERMATA PRIMA AIRWAYS — Pesawat
-6. CERMATA UTAMA GROUB — Kapal
-7. CERMATA CARGO GROUB — Expedisi
+The site does not treat fabricated member totals, fleet IDs, event schedules, or news as real operational facts.
 
-## Setup
-1. Copy .env.example to .env.
-2. Set DATABASE_URL.
-3. Run npm install.
-4. Run npx prisma generate.
-5. Run npm run db:push.
-6. Run npm run db:seed when seed data is available.
-7. Run npm run dev.
+Initial seed data contains only the known division structure and simulator mapping. Member counts, fleet records, events, and other operational values remain empty until entered or synchronized from a real source.
 
-Never commit secrets, tokens, passwords, webhook URLs, or .env files.
+GitHub project data is read directly from the GitHub API. Public pages expose public repository metadata only. Private repository metadata is server-side/admin-only and requires a configured GitHub token.
+
+## GitHub connection
+
+Environment:
+
+- `GITHUB_OWNER`
+- `GITHUB_TOKEN`
+- `GITHUB_SYNC_KEY`
+
+Without `GITHUB_TOKEN`, public pages read public repositories from the configured owner. With the token, server-side admin tooling can include owned private repositories.
+
+GitHub data uses short server-side caching to reduce API traffic while keeping the project monitor current.
+
+## Admin security
+
+Environment:
+
+- `ADMIN_PASSWORD`
+- `ADMIN_SECRET`
+
+Admin authentication uses an HttpOnly session cookie. Never commit secrets, .env files, tokens, passwords, webhook URLs, or database credentials.
+
+## Database
+
+Environment:
+
+- `DATABASE_URL`
+
+Commands:
+
+```bash
+npm install
+npx prisma generate
+npm run db:push
+npm run db:seed
+npm run dev
+```
+
+## CI
+
+GitHub Actions runs:
+
+1. install dependencies
+2. Prisma client generation
+3. ESLint
+4. Next.js production build
+
+Prisma is pinned to a stable 7.x release instead of `latest` to keep the CLI deterministic in CI. Prisma documents `prisma generate` as the command for generating Prisma Client artifacts. citeturn591699search0turn591699search1
