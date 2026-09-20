@@ -37,7 +37,7 @@ export async function PATCH(request:Request){
     const data:{name?:string;locale?:string;passwordHash?:string}={};
     if(p.name!==undefined)data.name=p.name;
     if(p.locale!==undefined)data.locale=p.locale;
-    if(p.newPassword)data.passwordHash=await bcrypt.hash(p.newPassword,12);
+    if(p.newPassword){if(bcrypt.truncates(p.newPassword))return NextResponse.json({error:"Password terlalu panjang dalam format byte yang didukung."},{status:400});data.passwordHash=await bcrypt.hash(p.newPassword,12);}
     const updated=await db.user.update({where:{id:user.id},data,select:{id:true,name:true,email:true,image:true,locale:true,role:true}});
     const response=NextResponse.json({ok:true,user:updated});
     if(p.locale)response.cookies.set({name:"ncrp_locale",value:p.locale,httpOnly:false,sameSite:"lax",path:"/",maxAge:31536000});
