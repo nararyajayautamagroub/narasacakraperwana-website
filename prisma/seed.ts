@@ -1,3 +1,25 @@
-import {PrismaClient} from "@prisma/client"; const db=new PrismaClient();
-const divisions=[["cermata-indah","CERMATA INDAH","Pariwisata","🚌","Divisi pariwisata virtual untuk perjalanan, tour, dan convoy.",18,["BUSSID","ETS2"]],["lencara-trans","LENCARA TRANS","Pariwisata","🚌","Divisi pariwisata virtual dengan fokus operasional perjalanan dan event.",14,["BUSSID","ETS2"]],["cermata-abadi","CERMATA ABADI","AKAP/AKDP & Bus Karyawan","🚌","Operasional AKAP, AKDP, dan bus karyawan.",21,["BUSSID","ETS2"]],["nusamata-indah","NUSAMATA INDAH","AKAP/AKDP & Bus Karyawan","🚌","Divisi transportasi antarkota dan bus karyawan.",16,["BUSSID","ETS2"]],["cermata-prima-airways","CERMATA PRIMA AIRWAYS","Pesawat","✈️","Operasi penerbangan virtual dan event aviasi.",11,["Real Flight Simulator","Microsoft Flight Simulator"]],["cermata-utama-groub","CERMATA UTAMA GROUB","Kapal","🚢","Divisi maritim untuk voyage dan crew operation.",9,["Ship Simulator Extremes","Build and Rescue"]],["cermata-cargo-groub","CERMATA CARGO GROUB","Expedisi","🚚","Divisi ekspedisi dan logistik virtual lintas simulator.",24,["ETS2","ATS","TOE3","TSI","BUSSID"]]] as const;
-async function main(){for(const [slug,name,category,icon,description,members,platforms] of divisions)await db.division.upsert({where:{slug},update:{name,category,icon,description,members,platforms:[...platforms]},create:{slug,name,category,icon,description,members,platforms:[...platforms]}});const fleet=[["NCRP-CI-001","CERMATA INDAH","Bus","BUSSID","Cermata Indah Unit 001"],["NCRP-LT-001","LENCARA TRANS","Bus","ETS2","Lencara Trans Unit 001"],["NCRP-CA-001","CERMATA ABADI","Bus","BUSSID","Cermata Abadi Unit 001"],["NCRP-CPA-001","CERMATA PRIMA AIRWAYS","Aircraft","Microsoft Flight Simulator","Cermata Prima Airways Unit 001"],["NCRP-CUG-001","CERMATA UTAMA GROUB","Ship","Ship Simulator Extremes","Cermata Utama Groub Unit 001"],["NCRP-CCG-001","CERMATA CARGO GROUB","Truck","ATS","Cermata Cargo Groub Unit 001"]] as const;for(const [code,dn,type,platform,unitName] of fleet){const d=await db.division.findUnique({where:{name:dn}});if(d)await db.fleet.upsert({where:{code},update:{type,platform,unitName,divisionId:d.id},create:{code,type,platform,unitName,divisionId:d.id}})}await db.news.upsert({where:{slug:"website-ncrp-2-0"},update:{},create:{slug:"website-ncrp-2-0",title:"Website NARASA CAKRA PERWANA 2.0",excerpt:"Pembaruan website dengan recruitment, fleet, events, berita, galeri, dan fondasi database.",content:"Website kini memiliki fondasi backend dan database untuk dikembangkan menjadi pusat operasional komunitas.",published:true,publishedAt:new Date()}})}main().finally(()=>db.$disconnect());
+import {PrismaClient} from "@prisma/client";
+
+const db=new PrismaClient();
+
+const divisions=[
+  ["cermata-indah","CERMATA INDAH","Pariwisata","🚌","Divisi pariwisata virtual untuk perjalanan, tour, dan convoy.",["BUSSID","ETS2"]],
+  ["lencara-trans","LENCARA TRANS","Pariwisata","🚌","Divisi pariwisata virtual dengan fokus operasional perjalanan dan event.",["BUSSID","ETS2"]],
+  ["cermata-abadi","CERMATA ABADI","AKAP/AKDP & Bus Karyawan","🚌","Operasional AKAP, AKDP, dan bus karyawan.",["BUSSID","ETS2"]],
+  ["nusamata-indah","NUSAMATA INDAH","AKAP/AKDP & Bus Karyawan","🚌","Divisi transportasi antarkota dan bus karyawan.",["BUSSID","ETS2"]],
+  ["cermata-prima-airways","CERMATA PRIMA AIRWAYS","Pesawat","✈️","Operasi penerbangan virtual dan event aviasi.",["Real Flight Simulator","Microsoft Flight Simulator"]],
+  ["cermata-utama-groub","CERMATA UTAMA GROUB","Kapal","🚢","Divisi maritim untuk voyage dan crew operation.",["Ship Simulator Extremes","Build and Rescue"]],
+  ["cermata-cargo-groub","CERMATA CARGO GROUB","Expedisi","🚚","Divisi ekspedisi dan logistik virtual lintas simulator.",["ETS2","ATS","TOE3","TSI","BUSSID"]]
+] as const;
+
+async function main(){
+  for(const [slug,name,category,icon,description,platforms] of divisions){
+    await db.division.upsert({
+      where:{slug},
+      update:{name,category,icon,description,platforms:[...platforms]},
+      create:{slug,name,category,icon,description,members:0,platforms:[...platforms]}
+    });
+  }
+}
+
+main().catch(error=>{console.error(error);process.exitCode=1}).finally(async()=>{await db.$disconnect()});
