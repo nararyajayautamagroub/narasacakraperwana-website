@@ -34,8 +34,8 @@ export const authOptions:NextAuthOptions={
   callbacks:{
     async signIn({user,account,profile}){
       if(account?.provider==="google"){
-        const googleEmail=(profile as {email?:string}|undefined)?.email||user.email;
-        if(!googleEmail)return false;
+        const googleProfile=profile as {email?:string;email_verified?:boolean}|undefined;const googleEmail=googleProfile?.email||user.email;
+        if(!googleEmail||googleProfile?.email_verified===false)return false;
         const email=googleEmail.trim().toLowerCase();
         const existing=await db.user.findUnique({where:{email}});
         if(existing){
