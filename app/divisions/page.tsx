@@ -1,2 +1,3 @@
-import {divisions} from "@/lib/data"; import {DivisionCard} from "@/components/DivisionCard";
-export default function Divisions(){return <main><div className="container page-head"><div className="eyebrow">Directory</div><h1 className="title">All Divisions</h1><p className="lead">Direktori resmi unit virtual transportation NARASA CAKRA PERWANA.</p></div><section className="section" style={{paddingTop:15}}><div className="container grid grid-3">{divisions.map(d=><DivisionCard key={d.slug} division={d}/>)}</div></section></main>}
+import {getLiveDivisions} from "@/lib/server-data"; import {DivisionCard} from "@/components/DivisionCard";
+export const revalidate=60;
+export default async function Divisions(){const divisions=await getLiveDivisions();return <main><div className="container page-head"><div className="eyebrow">Directory</div><h1 className="title">All Divisions</h1><p className="lead">Direktori resmi unit virtual transportation NARASA CAKRA PERWANA.</p></div><section className="section" style={{paddingTop:15}}><div className="container grid grid-3">{divisions.map(d=><DivisionCard key={d.slug} division={d}/>)}</div></section></main>}
