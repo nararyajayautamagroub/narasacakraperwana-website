@@ -1,0 +1,1 @@
+export default function Loading(){return <main><div className="container page-head"><div className="eyebrow">Loading</div><h1 className="title">Memuat data...</h1><p className="lead">Mengambil data live. Karena bahkan website juga butuh satu tarikan napas.</p></div></main>
