@@ -62,6 +62,7 @@ export const authOptions:NextAuthOptions={
         session.user.id=String(token.uid||"");
         session.user.role=String(token.role||"USER");
         session.user.locale=String(token.locale||"id");
+        session.user.hasPassword=Boolean(token.hasPassword);
       }
       return session;
     }
