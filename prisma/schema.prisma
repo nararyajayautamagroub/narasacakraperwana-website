@@ -134,3 +134,84 @@ model SiteSetting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+model GitHubProject {
+  id              String   @id @default(cuid())
+  githubId        Int      @unique
+  name            String
+  fullName        String   @unique
+  htmlUrl         String
+  description     String?
+  visibility      String
+  isPrivate       Boolean  @default(false)
+  archived        Boolean  @default(false)
+  fork            Boolean  @default(false)
+  defaultBranch   String
+  language        String?
+  stars           Int      @default(0)
+  forks           Int      @default(0)
+  openIssues      Int      @default(0)
+  lastCommitSha   String?
+  lastCommitMsg   String?
+  lastCommitAt    DateTime?
+  workflowStatus  String?
+  workflowResult  String?
+  lastSyncedAt    DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([lastSyncedAt])
+  @@index([visibility])
+}
+
+model ScrapeSource {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  name          String
+  url           String
+  kind          String
+  enabled       Boolean  @default(true)
+  selector      String?
+  titleSelector String?
+  dateSelector  String?
+  linkSelector  String?
+  imageSelector String?
+  lastStatus    String?
+  lastError     String?
+  lastRunAt     DateTime?
+  lastItemCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ScrapeRun {
+  id          String   @id @default(cuid())
+  sourceKey   String
+  status      String
+  itemCount   Int      @default(0)
+  startedAt   DateTime @default(now())
+  finishedAt  DateTime?
+  durationMs  Int?
+  error       String?
+  createdAt   DateTime @default(now())
+  @@index([sourceKey])
+  @@index([startedAt])
+}
+
+model ScrapedItem {
+  id          String   @id @default(cuid())
+  sourceKey   String
+  externalKey String
+  title       String
+  url         String?
+  publishedAt DateTime?
+  imageUrl    String?
+  excerpt     String?
+  content     String?
+  payload     Json?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@unique([sourceKey, externalKey])
+  @@index([sourceKey, lastSeenAt])
+}
