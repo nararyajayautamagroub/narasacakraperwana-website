@@ -102,7 +102,10 @@ export async function getRepositoryPublic(name:string){
 export async function getRepositoryTree(name:string){
   const repo=await getRepositoryPublic(name);
   if(!repo)return null;
-  const tree=await githubFetch<GitHubApiTree>(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo.name)}/git/trees/${encodeURIComponent(repo.default_branch)}?recursive=1`);
+  const branchCommit=await githubFetch<{commit?:{tree?:{sha?:string}}}>(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo.name)}/commits/${encodeURIComponent(repo.default_branch)}`);
+  const treeSha=branchCommit?.commit?.tree?.sha;
+  if(!treeSha)return {repo,files:[] as Array<{path:string;size:number;sha:string;url:string}>};
+  const tree=await githubFetch<GitHubApiTree>(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo.name)}/git/trees/${encodeURIComponent(treeSha)}?recursive=1`);
   if(!tree)return {repo,files:[] as Array<{path:string;size:number;sha:string;url:string}>};
   const files=(tree.tree??[]).filter(item=>item.type==="blob"&&item.path&&item.sha).slice(0,200).map(item=>({
     path:item.path!,
