@@ -2,76 +2,131 @@
 
 Website PO Virtual / Virtual Transportation Community NARASA CAKRA PERWANA.
 
-## Implemented
+## Version 4.0
 
-- Next.js App Router + TypeScript
-- White background + pink accent visual system
-- Light, consistent shadows
-- Animated pink buttons with hover, shine, press, focus and disabled states
-- Responsive navigation with working `=` hamburger menu
-- 7 official division directory + detail pages
-- Recruitment form -> validation -> API -> PostgreSQL
-- Events and Fleet pages read operational database
-- News, Gallery, Contact
-- Prisma schema + seed
-- Live GitHub repository monitor
-- Public repository metadata + latest commit + GitHub Actions status
-- Admin-only repository view for authenticated GitHub-owned repositories
-- Runtime error page, loading state, 404 page, health endpoint
-- GitHub Actions CI
+- Responsive white + pink design
+- Soft shadows and animated buttons
+- Mobile hamburger menu
+- 10-language selector
+- Account register
+- Email/password login
+- Google OAuth login
+- JWT session
+- User dashboard
+- Profile/settings
+- Password change and password creation for Google-only accounts
+- PostgreSQL + Prisma
+- Live GitHub project monitor
+- Private GitHub repository admin monitor
+- HTML/RSS/JSON scraper
+- Scraper history + stored items
+- Scheduled scraper endpoint
+- Admin authentication
+- Error, 404 and loading boundaries
+- Health endpoint
+- ESLint + TypeScript + production build checks
 
-## Data accuracy policy
+## Ten languages
 
-The site does not treat fabricated member totals, fleet IDs, event schedules, or news as real operational facts.
+- 🇮🇩 Bahasa Indonesia
+- 🇬🇧 English
+- 🇲🇾 Bahasa Melayu
+- 🇨🇳 简体中文
+- 🇯🇵 日本語
+- 🇰🇷 한국어
+- 🇸🇦 العربية
+- 🇪🇸 Español
+- 🇫🇷 Français
+- 🇩🇪 Deutsch
 
-Initial seed data contains only the known division structure and simulator mapping. Member counts, fleet records, events, and other operational values remain empty until entered or synchronized from a real source.
+The selected locale is stored in a browser cookie and, for authenticated users, in PostgreSQL.
 
-GitHub project data is read directly from the GitHub API. Public pages expose public repository metadata only. Private repository metadata is server-side/admin-only and requires a configured GitHub token.
+## Authentication
+
+Local account:
+- Register
+- Login
+- Logout
+- Password hash with bcrypt
+- JWT session
+
+Google:
+- Google OAuth provider through NextAuth
+- Existing Google users are matched by normalized email
+- Google-only users can create a local password later in Settings
+
+Required environment:
+
+```env
+NEXTAUTH_URL="https://narasacakraperwana.com"
+NEXTAUTH_SECRET=""
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+```
+
+Google OAuth redirect URIs:
+
+```
+https://YOUR-DOMAIN/api/auth/callback/google
+http://localhost:3000/api/auth/callback/google
+```
+
+Do not put Google secrets in source control.
+
+## Scraper
+
+Supported:
+- HTML/CSS selector
+- RSS/XML
+- JSON
+
+Safety:
+- HTTPS only
+- response timeout
+- response size limit
+- configurable host allowlist
+- database persistence
+- run history
+- dry-run configuration validation
+
+Commands:
+
+```bash
+npm run scrape
+npm run scrape:check
+```
+
+Scheduler endpoint:
+
+`/api/scraper/run`
+
+It requires `CRON_SECRET` or `SCRAPER_RUN_SECRET`.
 
 ## GitHub connection
 
-Environment:
+Public website:
+- public repository metadata
+- commit information when authenticated
+- GitHub Actions state when authenticated
 
-- `GITHUB_OWNER`
-- `GITHUB_TOKEN`
-- `GITHUB_SYNC_KEY`
+Admin:
+- can synchronize owned private repositories with `GITHUB_TOKEN`
 
-Without `GITHUB_TOKEN`, public pages read public repositories from the configured owner. With the token, server-side admin tooling can include owned private repositories.
+Private repository information is never rendered on the public project monitor.
 
-GitHub data uses short server-side caching to reduce API traffic while keeping the project monitor current.
+## Data policy
 
-## Admin security
+Unverified member totals, fleet units, events, and news are not seeded as real facts. Empty operational values remain empty until supplied by an authorized source or admin.
 
-Environment:
-
-- `ADMIN_PASSWORD`
-- `ADMIN_SECRET`
-
-Admin authentication uses an HttpOnly session cookie. Never commit secrets, .env files, tokens, passwords, webhook URLs, or database credentials.
-
-## Database
-
-Environment:
-
-- `DATABASE_URL`
-
-Commands:
+## Local setup
 
 ```bash
 npm install
 npx prisma generate
 npm run db:push
 npm run db:seed
+npm run check
 npm run dev
 ```
 
-## CI
-
-GitHub Actions runs:
-
-1. install dependencies
-2. Prisma client generation
-3. ESLint
-4. Next.js production build
-
-Prisma is pinned to a stable 7.x release instead of `latest` to keep the CLI deterministic in CI. Prisma documents `prisma generate` as the command for generating Prisma Client artifacts. citeturn591699search0turn591699search1
+For full production deployment, set `DATABASE_URL`, NextAuth secrets, Google OAuth credentials, GitHub token, admin secrets, and scraper configuration.
