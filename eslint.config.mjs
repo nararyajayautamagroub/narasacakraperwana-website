@@ -1,9 +1,13 @@
 import {defineConfig} from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import reactHooks from "eslint-plugin-react-hooks";
 
 export default defineConfig([
-  ...nextVitals,
   {
-    ignores:[".next/**","generated/**","node_modules/**"]
-  }
+    ignores:[".next/**","generated/**","node_modules/**","coverage/**"]
+  },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  reactHooks.configs.flat.recommended
 ]);
