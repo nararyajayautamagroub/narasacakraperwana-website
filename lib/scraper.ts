@@ -84,7 +84,7 @@ async function scrapeSource(source:ScrapeSourceConfig){
   }catch(error){
     const message=error instanceof Error?error.message:"Unknown scraper error";
     await db.scrapeSource.update({where:{key:source.key},data:{lastStatus:"ERROR",lastError:message,lastRunAt:new Date()}});
-    await db.scrapeRun.update({where:{id:run.id},data:{status:"ERROR",finishedAt:new Date(),durationMs:Date.now()-started,error:message,cause:undefined}});
+    await db.scrapeRun.update({where:{id:run.id},data:{status:"ERROR",finishedAt:new Date(),durationMs:Date.now()-started,error:message}});
     return {source:source.key,status:"ERROR",items:0,error:message};
   }
 }
