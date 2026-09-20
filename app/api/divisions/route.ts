@@ -1,1 +1,2 @@
-import {NextResponse} from "next/server"; import {db} from "@/lib/db"; export async function GET(){return NextResponse.json({divisions:await db.division.findMany({orderBy:{name:"asc"}})})}
+import {NextResponse} from "next/server"; import {db} from "@/lib/db"; import {divisions as fallback} from "@/lib/data";
+export async function GET(){try{return NextResponse.json({divisions:await db.division.findMany({orderBy:{name:"asc"}})})}catch{return NextResponse.json({divisions:fallback,source:"fallback"})}}
