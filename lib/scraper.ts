@@ -1,23 +1,26 @@
 import {load} from "cheerio";
+import {Prisma} from "@/generated/prisma";
 import {db} from "@/lib/db";
 import {getOwnedRepositories} from "@/lib/github";
 
 export type ScrapeKind="html"|"rss"|"json";
 export type ScrapeSourceConfig={
-  key:string;
-  name:string;
-  url:string;
-  kind:ScrapeKind;
-  selector?:string;
-  titleSelector?:string;
-  dateSelector?:string;
-  linkSelector?:string;
-  imageSelector?:string;
+  key:string; name:string; url:string; kind:ScrapeKind;
+  selector?:string; titleSelector?:string; dateSelector?:string; linkSelector?:string; imageSelector?:string;
 };
 
-const USER_AGENT="NARASA-CAKRA-PERWANA-Scraper/1.0 (+https://narasacakraperwana.com)";
+type JsonRecord=Record<string,unknown>;
+const USER_AGENT="NARASA-CAKRA-PERWANA-Scraper/2.0 (+https://narasacakraperwana.com)";
 const timeoutMs=Number(process.env.SCRAPER_TIMEOUT_MS||10000);
 const maxBytes=Number(process.env.SCRAPER_MAX_BYTES||2_000_000);
+
+function isRecord(value:unknown):value is JsonRecord{
+  return typeof value==="object"&&value!==null&&!Array.isArray(value);
+}
+
+function stringValue(value:unknown):string|undefined{
+  return typeof value==="string"?value:undefined;
+}
 
 function allowedHost(url:string){
   const parsed=new URL(url);
@@ -30,7 +33,11 @@ function allowedHost(url:string){
 
 async function getText(url:string){
   allowedHost(url);
-  const response=await fetch(url,{headers:{"user-agent":USER_AGENT,"accept":"text/html,application/json,application/xml,text/xml;q=0.9,*/*;q=0.8"},signal:AbortSignal.timeout(timeoutMs),cache:"no-store"});
+  const response=await fetch(url,{
+    headers:{"user-agent":USER_AGENT,"accept":"text/html,application/json,application/xml,text/xml;q=0.9,*/*;q=0.8"},
+    signal:AbortSignal.timeout(timeoutMs),
+    cache:"no-store"
+  });
   if(!response.ok)throw new Error(`HTTP ${response.status}`);
   const length=Number(response.headers.get("content-length")||0);
   if(length>maxBytes)throw new Error("Response terlalu besar.");
@@ -40,7 +47,9 @@ async function getText(url:string){
 }
 
 function asDate(value?:string|null){
-  if(!value)return null;const date=new Date(value);return Number.isNaN(date.getTime())?null:date;
+  if(!value)return null;
+  const date=new Date(value);
+  return Number.isNaN(date.getTime())?null:date;
 }
 
 async function scrapeSource(source:ScrapeSourceConfig){
@@ -48,24 +57,34 @@ async function scrapeSource(source:ScrapeSourceConfig){
   const run=await db.scrapeRun.create({data:{sourceKey:source.key,status:"RUNNING"}});
   try{
     const {response,text}=await getText(source.url);
-    const items:Array<{externalKey:string;title:string;url?:string;publishedAt?:Date|null;imageUrl?:string;excerpt?:string;content?:string;payload?:unknown}>=[];
+    const items:Array<{externalKey:string;title:string;url?:string;publishedAt?:Date|null;imageUrl?:string;excerpt?:string;content?:string;payload?:Prisma.InputJsonValue}>=[];
     if(source.kind==="json"){
       const data=JSON.parse(text) as unknown;
-      const rows=Array.isArray(data)?data:(typeof data==="object"&&data!==null&&Array.isArray((data as any).items)?(data as any).items:[data]);
+      let rows:unknown[]=Array.isArray(data)?data:[data];
+      if(isRecord(data)&&Array.isArray(data.items))rows=data.items;
       for(const row of rows.slice(0,500)){
-        if(!row||typeof row!=="object")continue;
-        const r=row as Record<string,unknown>;
-        const externalKey=String(r.id??r.url??r.slug??JSON.stringify(r));
-        items.push({externalKey,title:String(r.title??r.name??externalKey),url:typeof r.url==="string"?r.url:undefined,publishedAt:asDate(String(r.publishedAt??r.date??""))||null,excerpt:typeof r.excerpt==="string"?r.excerpt:undefined,content:typeof r.content==="string"?r.content:undefined,payload:r});
+        if(!isRecord(row))continue;
+        const externalKey=String(row.id??row.url??row.slug??JSON.stringify(row));
+        const title=String(row.title??row.name??externalKey);
+        items.push({
+          externalKey,
+          title,
+          url:stringValue(row.url),
+          publishedAt:asDate(stringValue(row.publishedAt??row.date)),
+          excerpt:stringValue(row.excerpt),
+          content:stringValue(row.content),
+          payload:row as Prisma.InputJsonValue
+        });
       }
     }else{
       const $=load(text,source.kind==="rss"?"xml":undefined);
       const selector=source.selector||(source.kind==="rss"?"item":"article");
-      $(selector).slice(0,500).each((_,el)=>{
-        const root=$(el);
+      $(selector).slice(0,500).each((_,element)=>{
+        const root=$(element);
         const title=(source.titleSelector?root.find(source.titleSelector):root.find("title, h1, h2, h3, .title")).first().text().trim();
         const href=(source.linkSelector?root.find(source.linkSelector):root.find("link, a[href]")).first().attr("href");
-        const rawDate=(source.dateSelector?root.find(source.dateSelector):root.find("pubDate, published, time, .date")).first().attr("datetime")||root.find("pubDate, published, time, .date").first().text().trim();
+        const dateElement=source.dateSelector?root.find(source.dateSelector):root.find("pubDate, published, time, .date");
+        const rawDate=dateElement.first().attr("datetime")||dateElement.first().text().trim();
         const image=(source.imageSelector?root.find(source.imageSelector):root.find("img[src]")).first().attr("src");
         const excerpt=root.find("description, summary, .excerpt, p").first().text().trim();
         const absoluteUrl=href?new URL(href,source.url).toString():undefined;
@@ -77,8 +96,8 @@ async function scrapeSource(source:ScrapeSourceConfig){
     for(const item of items){
       await db.scrapedItem.upsert({
         where:{sourceKey_externalKey:{sourceKey:source.key,externalKey:item.externalKey}},
-        update:{title:item.title,url:item.url,publishedAt:item.publishedAt,imageUrl:item.imageUrl,excerpt:item.excerpt,content:item.content,payload:item.payload as any,lastSeenAt:new Date()},
-        create:{sourceKey:source.key,externalKey:item.externalKey,title:item.title,url:item.url,publishedAt:item.publishedAt,imageUrl:item.imageUrl,excerpt:item.excerpt,content:item.content,payload:item.payload as any}
+        update:{title:item.title,url:item.url,publishedAt:item.publishedAt,imageUrl:item.imageUrl,excerpt:item.excerpt,content:item.content,payload:item.payload,lastSeenAt:new Date()},
+        create:{sourceKey:source.key,externalKey:item.externalKey,title:item.title,url:item.url,publishedAt:item.publishedAt,imageUrl:item.imageUrl,excerpt:item.excerpt,content:item.content,payload:item.payload}
       });
     }
     await db.scrapeSource.update({where:{key:source.key},data:{lastStatus:"OK",lastError:null,lastRunAt:new Date(),lastItemCount:items.length}});
@@ -95,29 +114,84 @@ async function scrapeSource(source:ScrapeSourceConfig){
 function parseEnvSources():ScrapeSourceConfig[]{
   const raw=process.env.SCRAPER_SOURCES;
   if(!raw)return [];
-  try{const parsed=JSON.parse(raw) as unknown[];return parsed.filter(Boolean).map((x:any)=>({key:String(x.key),name:String(x.name||x.key),url:String(x.url),kind:(x.kind||"html") as ScrapeKind,selector:x.selector,titleSelector:x.titleSelector,dateSelector:x.dateSelector,linkSelector:x.linkSelector,imageSelector:x.imageSelector}));}
-  catch{throw new Error("SCRAPER_SOURCES bukan JSON yang valid.");}
+  try{
+    const parsed=JSON.parse(raw) as unknown;
+    if(!Array.isArray(parsed))throw new Error("SCRAPER_SOURCES harus berupa array JSON.");
+    return parsed.filter(isRecord).map((item)=>{
+      const kind=String(item.kind||"html") as ScrapeKind;
+      return {
+        key:String(item.key||""),
+        name:String(item.name||item.key||""),
+        url:String(item.url||""),
+        kind,
+        selector:stringValue(item.selector),
+        titleSelector:stringValue(item.titleSelector),
+        dateSelector:stringValue(item.dateSelector),
+        linkSelector:stringValue(item.linkSelector),
+        imageSelector:stringValue(item.imageSelector)
+      };
+    });
+  }catch(error){
+    if(error instanceof Error&&error.message.startsWith("SCRAPER_SOURCES"))throw error;
+    throw new Error("SCRAPER_SOURCES bukan JSON yang valid.");
+  }
 }
 
 async function syncGitHub(){
   const repos=await getOwnedRepositories(Boolean(process.env.GITHUB_TOKEN));
-  for(const r of repos){
+  for(const repository of repos){
     await db.gitHubProject.upsert({
-      where:{githubId:r.id},
-      update:{name:r.name,fullName:r.full_name,htmlUrl:r.html_url,description:r.description,visibility:r.private?"private":"public",isPrivate:r.private,archived:r.archived,fork:r.fork,defaultBranch:r.default_branch,language:r.language,stars:r.stargazers_count,forks:r.forks_count,openIssues:r.open_issues_count,lastCommitSha:r.last_commit?.sha,lastCommitMsg:r.last_commit?.message,lastCommitAt:asDate(r.last_commit?.date),workflowStatus:r.latest_workflow?.status,workflowResult:r.latest_workflow?.conclusion,lastSyncedAt:new Date()},
-      create:{githubId:r.id,name:r.name,fullName:r.full_name,htmlUrl:r.html_url,description:r.description,visibility:r.private?"private":"public",isPrivate:r.private,archived:r.archived,fork:r.fork,defaultBranch:r.default_branch,language:r.language,stars:r.stargazers_count,forks:r.forks_count,openIssues:r.open_issues_count,lastCommitSha:r.last_commit?.sha,lastCommitMsg:r.last_commit?.message,lastCommitAt:asDate(r.last_commit?.date),workflowStatus:r.latest_workflow?.status,workflowResult:r.latest_workflow?.conclusion}
+      where:{githubId:repository.id},
+      update:{
+        name:repository.name,fullName:repository.full_name,htmlUrl:repository.html_url,description:repository.description,
+        visibility:repository.private?"private":"public",isPrivate:repository.private,archived:repository.archived,fork:repository.fork,
+        defaultBranch:repository.default_branch,language:repository.language,stars:repository.stargazers_count,forks:repository.forks_count,
+        openIssues:repository.open_issues_count,lastCommitSha:repository.last_commit?.sha,lastCommitMsg:repository.last_commit?.message,
+        lastCommitAt:asDate(repository.last_commit?.date),workflowStatus:repository.latest_workflow?.status,
+        workflowResult:repository.latest_workflow?.conclusion,lastSyncedAt:new Date()
+      },
+      create:{
+        githubId:repository.id,name:repository.name,fullName:repository.full_name,htmlUrl:repository.html_url,description:repository.description,
+        visibility:repository.private?"private":"public",isPrivate:repository.private,archived:repository.archived,fork:repository.fork,
+        defaultBranch:repository.default_branch,language:repository.language,stars:repository.stargazers_count,forks:repository.forks_count,
+        openIssues:repository.open_issues_count,lastCommitSha:repository.last_commit?.sha,lastCommitMsg:repository.last_commit?.message,
+        lastCommitAt:asDate(repository.last_commit?.date),workflowStatus:repository.latest_workflow?.status,
+        workflowResult:repository.latest_workflow?.conclusion
+      }
     });
   }
   return repos.length;
 }
 
-export function validateScraperConfig(){const sources=parseEnvSources();if(sources.length&&!process.env.SCRAPER_ALLOWED_HOSTS)throw new Error("SCRAPER_ALLOWED_HOSTS wajib diisi ketika ada scraper source.");for(const source of sources){if(!source.key||!source.url)throw new Error("Setiap scraper source wajib memiliki key dan url.");allowedHost(source.url);if(!["html","rss","json"].includes(source.kind))throw new Error(`Jenis scraper tidak didukung: ${source.kind}`);}return {sources:sources.map(source=>({key:source.key,name:source.name,url:source.url,kind:source.kind}))};}\n\nexport async function runScraper(){
+export function validateScraperConfig(){
+  const sources=parseEnvSources();
+  if(sources.length&&!process.env.SCRAPER_ALLOWED_HOSTS)throw new Error("SCRAPER_ALLOWED_HOSTS wajib diisi ketika ada scraper source.");
+  for(const source of sources){
+    if(!source.key||!source.url)throw new Error("Setiap scraper source wajib memiliki key dan url.");
+    allowedHost(source.url);
+    if(!["html","rss","json"].includes(source.kind))throw new Error(`Jenis scraper tidak didukung: ${source.kind}`);
+  }
+  return {sources:sources.map(source=>({key:source.key,name:source.name,url:source.url,kind:source.kind}))};
+}
+
+export async function runScraper(){
   const envSources=parseEnvSources();
   for(const source of envSources){
-    await db.scrapeSource.upsert({where:{key:source.key},update:{name:source.name,url:source.url,kind:source.kind,selector:source.selector,titleSelector:source.titleSelector,dateSelector:source.dateSelector,linkSelector:source.linkSelector,imageSelector:source.imageSelector},create:{key:source.key,name:source.name,url:source.url,kind:source.kind,selector:source.selector,titleSelector:source.titleSelector,dateSelector:source.dateSelector,linkSelector:source.linkSelector,imageSelector:source.imageSelector}});
+    await db.scrapeSource.upsert({
+      where:{key:source.key},
+      update:{name:source.name,url:source.url,kind:source.kind,selector:source.selector,titleSelector:source.titleSelector,dateSelector:source.dateSelector,linkSelector:source.linkSelector,imageSelector:source.imageSelector},
+      create:{key:source.key,name:source.name,url:source.url,kind:source.kind,selector:source.selector,titleSelector:source.titleSelector,dateSelector:source.dateSelector,linkSelector:source.linkSelector,imageSelector:source.imageSelector}
+    });
   }
   const dbSources=await db.scrapeSource.findMany({where:{enabled:true},orderBy:{key:"asc"}});
-  const results=[];for(const source of dbSources){results.push(await scrapeSource(source as ScrapeSourceConfig));}
+  const results=[];
+  for(const source of dbSources){
+    results.push(await scrapeSource({
+      key:source.key,name:source.name,url:source.url,kind:source.kind as ScrapeKind,
+      selector:source.selector||undefined,titleSelector:source.titleSelector||undefined,dateSelector:source.dateSelector||undefined,
+      linkSelector:source.linkSelector||undefined,imageSelector:source.imageSelector||undefined
+    }));
+  }
   const githubCount=await syncGitHub();
   return {scraped:results,githubProjects:githubCount,completedAt:new Date().toISOString()};
 }
