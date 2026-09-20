@@ -55,7 +55,7 @@ async function scrapeSource(source:ScrapeSourceConfig){
         items.push({externalKey,title:String(row.title??row.name??externalKey),url:stringValue(row.url),publishedAt:asDate(stringValue(row.publishedAt??row.date)),excerpt:stringValue(row.excerpt),content:stringValue(row.content),payload:row as Prisma.InputJsonValue});
       }
     }else{
-      const $=load(text,source.kind==="rss"?"xml":undefined);
+      const $=load(text,source.kind==="rss"?{xml:true}:undefined);
       const selector=source.selector||(source.kind==="rss"?"item":"article");
       $(selector).slice(0,500).each((_,element)=>{
         const root=$(element);
