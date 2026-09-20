@@ -1,0 +1,2 @@
+"use client"; import {useEffect} from "react";
+export default function Error({error,reset}:{error:Error&{digest?:string};reset:()=>void}){useEffect(()=>{console.error(error)},[error]);return <main><div className="container page-head"><div className="eyebrow">Runtime Error</div><h1 className="title">Terjadi gangguan.</h1><p className="lead">Halaman gagal dimuat. Coba ulang tanpa menghapus data yang sudah ada.</p><button className="btn btn-primary" onClick={()=>reset()}>COBA LAGI →</button></div></main>}
