@@ -1,0 +1,7 @@
+import {NextResponse} from "next/server"; import bcrypt from "bcryptjs"; import {db} from "@/lib/db"; import {rateLimit} from "@/lib/rate-limit"; import {z} from "zod";
+const schema=z.object({name:z.string().trim().min(2).max(80),email:z.string().trim().email().max(180),password:z.string().min(8).max(72)});
+export async function POST(request:Request){
+ const ip=request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()||"unknown";const limit=rateLimit(`register:${ip}`,5,60_000);if(!limit.ok)return NextResponse.json({error:"Terlalu banyak percobaan. Coba lagi nanti."},{status:429});
+ try{const p=schema.parse(await request.json());const email=p.email.toLowerCase();const exists=await db.user.findUnique({where:{email}});if(exists)return NextResponse.json({error:"Email sudah terdaftar."},{status:409});const passwordHash=await bcrypt.hash(p.password,12);const user=await db.user.create({data:{name:p.name,email,passwordHash,locale:"id",role:"USER"},select:{id:true,email:true,name:true}});return NextResponse.json({ok:true,user},{status:201})}
+ catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Data registrasi tidak valid."},{status:400})}
+}
