@@ -24,3 +24,5 @@ es:{...en,home:"Inicio",divisions:"Divisiones",recruitment:"Reclutamiento",event
 fr:{...en,home:"Accueil",divisions:"Divisions",recruitment:"Recrutement",events:"Événements",fleet:"Flotte",projects:"Projets",news:"Actualités",about:"À propos",settings:"Paramètres",login:"Connexion",register:"S’inscrire",logout:"Déconnexion",dashboard:"Tableau de bord",join:"REJOINDRE",language:"Langue",welcome:"Bienvenue",save:"Enregistrer"},
 de:{...en,home:"Startseite",divisions:"Abteilungen",recruitment:"Bewerbung",events:"Veranstaltungen",fleet:"Flotte",projects:"Projekte",news:"Neuigkeiten",about:"Über uns",settings:"Einstellungen",login:"Anmelden",register:"Registrieren",logout:"Abmelden",dashboard:"Dashboard",join:"BEITRETEN",language:"Sprache",welcome:"Willkommen",save:"Speichern"}
 };
+
+export function getClientLocale(fallback:Locale="id"):Locale{if(typeof document==="undefined")return fallback;const value=document.cookie.split("; ").find(x=>x.startsWith("ncrp_locale="))?.split("=")[1] as Locale|undefined;return value&&locales.some(x=>x.code===value)?value:fallback;}
