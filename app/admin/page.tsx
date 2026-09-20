@@ -1,2 +1,51 @@
-import Link from "next/link"; import {db} from "@/lib/db"; import {requireAdmin} from "@/lib/admin-auth"; export const dynamic="force-dynamic";
-export default async function AdminPage(){await requireAdmin();const [applications,messages,events,fleet,news,sources]=await Promise.all([db.recruitment.count({where:{status:"PENDING"}}),db.contactMessage.count({where:{handled:false}}),db.event.count(),db.fleet.count(),db.news.count(),db.scrapeSource.count({where:{enabled:true}})]);return <main><div className="container page-head"><div className="eyebrow">Admin</div><h1 className="title">Operations dashboard.</h1><p className="lead">Data operasional internal. Session admin aktif.</p></div><section className="section" style={{paddingTop:20}}><div className="container grid grid-4">{[["Recruitment Pending",applications],["Pesan Baru",messages],["Events",events],["Fleet",fleet],["News",news],["Scraper Sources",sources]].map(([label,value])=><div className="card stat" key={label as string}><span className="muted">{label}</span><strong>{value}</strong></div>)}</div><div className="card" style={{marginTop:18}}><h2>Modul</h2><div className="chips"><Link className="chip" href="/admin/recruitment">Recruitment</Link><Link className="chip" href="/admin/messages">Messages</Link><Link className="chip" href="/admin/content">Content</Link><Link className="chip" href="/admin/github">GitHub Sync</Link><Link className="chip" href="/admin/scraper">Scraper</Link></div></div></div></section></main>}
+import Link from "next/link";
+import {db} from "@/lib/db";
+import {requireAdmin} from "@/lib/admin-auth";
+
+export const dynamic="force-dynamic";
+
+export default async function AdminPage(){
+  await requireAdmin();
+  const [applications,messages,events,fleet,news,sources]=await Promise.all([
+    db.recruitment.count({where:{status:"PENDING"}}),
+    db.contactMessage.count({where:{handled:false}}),
+    db.event.count(),
+    db.fleet.count(),
+    db.news.count(),
+    db.scrapeSource.count({where:{enabled:true}})
+  ]);
+
+  const stats=[
+    ["Recruitment Pending",applications],
+    ["Pesan Baru",messages],
+    ["Events",events],
+    ["Fleet",fleet],
+    ["News",news],
+    ["Scraper Sources",sources]
+  ] as const;
+
+  return <main>
+    <div className="container page-head">
+      <div className="eyebrow">Admin</div>
+      <h1 className="title">Operations dashboard.</h1>
+      <p className="lead">Data operasional internal. Session admin aktif.</p>
+    </div>
+    <section className="section" style={{paddingTop:20}}>
+      <div className="container">
+        <div className="grid grid-4">
+          {stats.map(([label,value])=><div className="card stat" key={label}><span className="muted">{label}</span><strong>{value}</strong></div>)}
+        </div>
+        <div className="card" style={{marginTop:18}}>
+          <h2>Modul</h2>
+          <div className="chips">
+            <Link className="chip" href="/admin/recruitment">Recruitment</Link>
+            <Link className="chip" href="/admin/messages">Messages</Link>
+            <Link className="chip" href="/admin/content">Content</Link>
+            <Link className="chip" href="/admin/github">GitHub Sync</Link>
+            <Link className="chip" href="/admin/scraper">Scraper</Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>;
+}
