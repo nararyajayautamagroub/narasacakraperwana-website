@@ -1,14 +1,13 @@
 "use client";
 import Link from "next/link";
-import {useEffect,useState} from "react";
+import {useState} from "react";
 import {LocaleSwitcher} from "@/components/LocaleSwitcher";
 import {UserMenu} from "@/components/UserMenu";
-import {messages,type Locale} from "@/lib/i18n";
+import {getClientLocale,messages,type Locale} from "@/lib/i18n";
 const links=[["/","home"],["/divisions","divisions"],["/recruitment","recruitment"],["/events","events"],["/fleet","fleet"],["/github","projects"],["/news","news"],["/about","about"]] as const;
 export function Navbar(){
   const [open,setOpen]=useState(false);
-  const [locale,setLocale]=useState<Locale>("id");
-  useEffect(()=>{const c=document.cookie.split("; ").find(x=>x.startsWith("ncrp_locale="))?.split("=")[1] as Locale|undefined;if(c)setLocale(c)},[]);
+  const [locale]=useState<Locale>(()=>getClientLocale("id"));
   const t=messages[locale]||messages.id;
   const close=()=>setOpen(false);
   return <header className="nav">
@@ -23,5 +22,5 @@ export function Navbar(){
         <div className="mobile-tools"><LocaleSwitcher current={locale}/><UserMenu/></div>
       </div>
     </div>
-  </header>
+  </header>;
 }
