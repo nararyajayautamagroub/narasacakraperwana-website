@@ -52,8 +52,8 @@ export const authOptions:NextAuthOptions={
         if(dbUser)token.uid=dbUser.id;
       }else if(user?.id){token.uid=user.id}
       if(token.uid){
-        const dbUser=await db.user.findUnique({where:{id:String(token.uid)},select:{id:true,name:true,email:true,image:true,role:true,locale:true}});
-        if(dbUser){token.uid=dbUser.id;token.name=dbUser.name;token.email=dbUser.email;token.picture=dbUser.image||undefined;token.role=dbUser.role;token.locale=dbUser.locale;}
+        const dbUser=await db.user.findUnique({where:{id:String(token.uid)},select:{id:true,name:true,email:true,image:true,role:true,locale:true,passwordHash:true}});
+        if(dbUser){token.uid=dbUser.id;token.name=dbUser.name;token.email=dbUser.email;token.picture=dbUser.image||undefined;token.role=dbUser.role;token.locale=dbUser.locale;token.hasPassword=Boolean(dbUser.passwordHash);}
       }
       return token;
     },
