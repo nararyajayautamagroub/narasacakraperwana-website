@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";
+export async function POST(request:Request){const {locale}=await request.json().catch(()=>({}));if(!["id","en","ms","zh","ja","ko","ar","es","fr","de"].includes(locale))return NextResponse.json({error:"Locale tidak didukung."},{status:400});const response=NextResponse.json({ok:true,locale});response.cookies.set({name:"ncrp_locale",value:locale,httpOnly:false,sameSite:"lax",path:"/",maxAge:31536000});return response}
