@@ -6,3 +6,18 @@ export async function getOwnedRepositories(includePrivate=false):Promise<GitHubR
 const enriched=await Promise.all(raw.map(async r=>{const [commits,runs]=await Promise.all([githubFetch<any[]>(`/repos/${r.full_name}/commits?sha=${encodeURIComponent(r.default_branch)}&per_page=1`),githubFetch<any>(`/repos/${r.full_name}/actions/runs?per_page=1`)]);const c=commits?.[0],w=runs?.workflow_runs?.[0];return{...normalize(r),last_commit:c?{sha:c.sha,message:String(c.commit?.message||"").split("\n")[0],author:c.commit?.author?.name||null,date:c.commit?.author?.date||c.commit?.committer?.date||""}:null,latest_workflow:w?{status:w.status,conclusion:w.conclusion||null,name:w.name||null,html_url:w.html_url||null,updated_at:w.updated_at}:null}}));return enriched;}
 export async function getGitHubOverview(){const repos=await getOwnedRepositories(false);const latest=[...repos].sort((a,b)=>Date.parse(b.updated_at)-Date.parse(a.updated_at))[0]||null;return{owner,repoCount:repos.length,repos,latest};}
 export type {GitHubRepo};
+
+export async function getRepositoryPublic(name:string){
+  const repo=await githubFetch<any>(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`);
+  if(!repo||repo.private)return null;
+  return normalize(repo);
+}
+
+export async function getRepositoryTree(name:string){
+  const repo=await getRepositoryPublic(name);
+  if(!repo)return null;
+  const tree=await githubFetch<any>(`/repos/${encodeURIComponent(repo.full_name.split("/")[0])}/${encodeURIComponent(repo.name)}/git/trees/${encodeURIComponent(repo.default_branch)}?recursive=1`);
+  if(!tree)return {repo,files:[]};
+  const files=Array.isArray(tree.tree)?tree.tree.filter((item:any)=>item.type==="blob").slice(0,200).map((item:any)=>({path:item.path,size:item.size||0,sha:item.sha,url:item.url})):[]; 
+  return {repo,files,truncated:Boolean(tree.truncated)};
+}
