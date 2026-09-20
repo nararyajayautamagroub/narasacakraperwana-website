@@ -6,5 +6,5 @@ declare module "next-auth" {
   interface User {role?:string;locale?:string;hasPassword?:boolean}
 }
 declare module "next-auth/jwt" {
-  interface JWT {uid?:string;role?:string;locale?:string}
+  interface JWT {uid?:string;role?:string;locale?:string;hasPassword?:boolean}
 }
