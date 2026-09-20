@@ -1,0 +1,3 @@
+import {NextResponse} from "next/server"; import {db} from "@/lib/db";
+export const dynamic="force-dynamic";
+export async function GET(){let database="ok";try{await db.$queryRaw`SELECT 1`}catch{database="error"}const github=process.env.GITHUB_TOKEN?"authenticated":"public-only";const ok=database==="ok";return NextResponse.json({status:ok?"ok":"degraded",timestamp:new Date().toISOString(),checks:{database,github}},{status:ok?200:503});}
