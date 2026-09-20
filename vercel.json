@@ -1,0 +1,1 @@
+{"framework":"nextjs","crons":[{"path":"/api/scraper/run","schedule":"*/10 * * * *"}]}
