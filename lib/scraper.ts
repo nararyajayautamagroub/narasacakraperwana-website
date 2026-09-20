@@ -23,7 +23,8 @@ function allowedHost(url:string){
   const parsed=new URL(url);
   if(parsed.protocol!=="https:")throw new Error("Scraper hanya mengizinkan HTTPS.");
   const allowed=(process.env.SCRAPER_ALLOWED_HOSTS||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
-  if(allowed.length && !allowed.some(host=>parsed.hostname===host||parsed.hostname.endsWith("."+host)))throw new Error("Host tidak masuk SCRAPER_ALLOWED_HOSTS.");
+  if(!allowed.length)throw new Error("SCRAPER_ALLOWED_HOSTS wajib diisi sebelum scraper mengambil data.");
+  if(!allowed.some(host=>parsed.hostname===host||parsed.hostname.endsWith("."+host)))throw new Error("Host tidak masuk SCRAPER_ALLOWED_HOSTS.");
   return parsed;
 }
 
@@ -110,7 +111,7 @@ async function syncGitHub(){
   return repos.length;
 }
 
-export function validateScraperConfig(){const sources=parseEnvSources();for(const source of sources){if(!source.key||!source.url)throw new Error("Setiap scraper source wajib memiliki key dan url.");allowedHost(source.url);if(!["html","rss","json"].includes(source.kind))throw new Error(`Jenis scraper tidak didukung: ${source.kind}`);}return {sources:sources.map(source=>({key:source.key,name:source.name,url:source.url,kind:source.kind}))};}\n\nexport async function runScraper(){
+export function validateScraperConfig(){const sources=parseEnvSources();if(sources.length&&!process.env.SCRAPER_ALLOWED_HOSTS)throw new Error("SCRAPER_ALLOWED_HOSTS wajib diisi ketika ada scraper source.");for(const source of sources){if(!source.key||!source.url)throw new Error("Setiap scraper source wajib memiliki key dan url.");allowedHost(source.url);if(!["html","rss","json"].includes(source.kind))throw new Error(`Jenis scraper tidak didukung: ${source.kind}`);}return {sources:sources.map(source=>({key:source.key,name:source.name,url:source.url,kind:source.kind}))};}\n\nexport async function runScraper(){
   const envSources=parseEnvSources();
   for(const source of envSources){
     await db.scrapeSource.upsert({where:{key:source.key},update:{name:source.name,url:source.url,kind:source.kind,selector:source.selector,titleSelector:source.titleSelector,dateSelector:source.dateSelector,linkSelector:source.linkSelector,imageSelector:source.imageSelector},create:{key:source.key,name:source.name,url:source.url,kind:source.kind,selector:source.selector,titleSelector:source.titleSelector,dateSelector:source.dateSelector,linkSelector:source.linkSelector,imageSelector:source.imageSelector}});
