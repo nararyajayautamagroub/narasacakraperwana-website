@@ -15,8 +15,7 @@ jobs:
           node-version: "24"
           package-manager-cache: false
       - run: npm install
-      - run: npx prisma generate
+      - run: npx prisma@6.19.3 generate
       - run: npm run lint
+      - run: npm run typecheck
       - run: npm run build
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ncrp
