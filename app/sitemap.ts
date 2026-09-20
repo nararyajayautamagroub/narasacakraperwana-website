@@ -1,2 +1,2 @@
 import type {MetadataRoute} from "next"; import {divisions} from "@/lib/data";
-export default function sitemap():MetadataRoute.Sitemap{const base="https://narasacakraperwana.com";return[{url:base},{url:base+"/about"},{url:base+"/divisions"},{url:base+"/recruitment"},{url:base+"/events"},{url:base+"/fleet"},...divisions.map(d=>({url:base+"/divisions/"+d.slug}))]}
+export default function sitemap():MetadataRoute.Sitemap{const base=process.env.NEXT_PUBLIC_SITE_URL||"https://narasacakraperwana.com";return[{url:base},{url:base+"/about"},{url:base+"/divisions"},{url:base+"/recruitment"},{url:base+"/events"},{url:base+"/fleet"},{url:base+"/news"},{url:base+"/gallery"},{url:base+"/contact"},{url:base+"/github"},...divisions.map(d=>({url:base+"/divisions/"+d.slug}))]}
