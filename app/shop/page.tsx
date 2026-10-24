@@ -16,12 +16,12 @@ const rupiah=(value:number)=>new Intl.NumberFormat("id-ID",{style:"currency",cur
 export default function ShopPage(){
  const [cart,setCart]=useState<Cart>({});
  const [name,setName]=useState("");const [phone,setPhone]=useState("");const [email,setEmail]=useState("");
- const [busy,setBusy]=useState(false);const [error,setError]=useState("");const [order,setOrder]=useState<Order|null>(null);const [now,setNow]=useState(Date.now());
+ const [busy,setBusy]=useState(false);const [error,setError]=useState("");const [order,setOrder]=useState<Order|null>(null);const [now,setNow]=useState(0);
  const total=useMemo(()=>catalog.reduce((sum,item)=>sum+item.price*(cart[item.id]||0),0),[cart]);
  const qrUrl=process.env.NEXT_PUBLIC_QRIS_IMAGE_URL;
  const waNumber=(process.env.NEXT_PUBLIC_WHATSAPP_ORDER_NUMBER||"").replace(/\D/g,"");
- useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer)},[]);
- useEffect(()=>{if(!order||order.status!=="PENDING")return;let live=true;const poll=async()=>{try{const r=await fetch("/api/orders/"+order.transactionId,{cache:"no-store"});const d=await r.json();if(live&&r.ok)setOrder(old=>old?{...old,...d}:null)}catch{}};const timer=setInterval(poll,5000);return()=>{live=false;clearInterval(timer)}},[order?.transactionId,order?.status]);
+ useEffect(()=>{setNow(Date.now());const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer)},[]);
+ const transactionId=order?.transactionId;const orderStatus=order?.status;\n useEffect(()=>{if(!transactionId||orderStatus!=="PENDING")return;let live=true;const poll=async()=>{try{const r=await fetch("/api/orders/"+transactionId,{cache:"no-store"});const d=await r.json();if(live&&r.ok)setOrder(old=>old?{...old,...d}:null)}catch{/* Keep the last known status while the network is unavailable. */}};const timer=setInterval(poll,5000);return()=>{live=false;clearInterval(timer)}},[transactionId,orderStatus]);
  const remaining=order?Math.max(0,Math.floor((new Date(order.paymentExpiresAt).getTime()-now)/1000)):0;
  const timerText=String(Math.floor(remaining/60)).padStart(2,"0")+":"+String(remaining%60).padStart(2,"0");
  async function checkout(e:React.FormEvent<HTMLFormElement>){
