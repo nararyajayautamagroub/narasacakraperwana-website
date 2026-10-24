@@ -26,7 +26,7 @@ export async function POST(request:Request){
     const data=await upstream.json();
     if(!upstream.ok)return NextResponse.json({error:"Layanan AI sedang tidak dapat memproses permintaan."},{status:502});
     const answer=typeof data.output_text==="string"?data.output_text:
-      Array.isArray(data.output)?data.output.flatMap((item:{content?:Array<{type?:string;text?:string}>})=>item.content||[]).filter(part=>part.type==="output_text").map(part=>part.text||"").join("\n"):"";
+      Array.isArray(data.output)?data.output.flatMap((item:{content?:Array<{type?:string;text?:string}>})=>item.content||[]).filter((part:{type?:string;text?:string})=>part.type==="output_text").map((part:{type?:string;text?:string})=>part.text||"").join("\n"):"";
     if(!answer.trim())return NextResponse.json({error:"AI tidak mengembalikan jawaban. Coba lagi."},{status:502});
     return NextResponse.json({answer,projectId:"NCRP-WEB-2026-0001",generatedAt:new Date().toISOString()},{headers:{"Cache-Control":"no-store"}});
   }catch{return NextResponse.json({error:"Koneksi ke layanan AI timeout atau gagal."},{status:504});}
