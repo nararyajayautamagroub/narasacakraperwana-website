@@ -17,7 +17,7 @@ export const metadata:Metadata={
 };
 
 export default async function RootLayout({children}:{children:React.ReactNode}){
-  const value=(await cookies()).get("ncrp_locale")?.value as Locale|undefined;
-  const locale=locales.some(x=>x.code===value)?value!:"id";
-  return <html lang={locale} dir={locale==="ar"?"rtl":"ltr"}><body><Providers><Navbar/>{children}<Footer/></Providers></body></html>;
+  const value=(await cookies()).get("ncrp_locale")?.value;
+  const locale:Locale=locales.some(x=>x.code===value)?value as Locale:"id";
+  return <html lang={locale} dir={locale==="ar"?"rtl":"ltr"}><body><Providers><Navbar initialLocale={locale}/>{children}<Footer/></Providers></body></html>;
 }
