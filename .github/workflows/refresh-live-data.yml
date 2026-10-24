@@ -1,0 +1,41 @@
+name: Refresh live data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+
+concurrency:
+  group: ncrp-live-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check deployment configuration
+        id: config
+        env:
+          WEBSITE_URL: ${{ secrets.WEBSITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$WEBSITE_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Skipped: configure WEBSITE_URL and CRON_SECRET in repository Actions secrets."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Refresh configured scraper sources
+        if: steps.config.outputs.configured == 'true'
+        env:
+          WEBSITE_URL: ${{ secrets.WEBSITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -eu
+          base="${WEBSITE_URL%/}"
+          curl --fail --silent --show-error --max-time 120 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${base}/api/scraper/run"
