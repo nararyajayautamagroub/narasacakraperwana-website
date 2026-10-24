@@ -11,8 +11,12 @@ export type ScrapeSourceConfig={
 
 type JsonRecord=Record<string,unknown>;
 const USER_AGENT="NARASA-CAKRA-PERWANA-Scraper/2.0 (+https://narasacakraperwana.com)";
-const timeoutMs=Number(process.env.SCRAPER_TIMEOUT_MS||10000);
-const maxBytes=Number(process.env.SCRAPER_MAX_BYTES||2_000_000);
+function boundedEnvNumber(name:string,fallback:number,min:number,max:number){
+  const parsed=Number(process.env[name]);
+  return Number.isFinite(parsed)?Math.min(max,Math.max(min,Math.floor(parsed))):fallback;
+}
+const timeoutMs=boundedEnvNumber("SCRAPER_TIMEOUT_MS",10_000,1_000,30_000);
+const maxBytes=boundedEnvNumber("SCRAPER_MAX_BYTES",2_000_000,1_024,5_000_000);
 
 function isRecord(value:unknown):value is JsonRecord{return typeof value==="object"&&value!==null&&!Array.isArray(value)}
 function stringValue(value:unknown):string|undefined{return typeof value==="string"?value:undefined}
@@ -71,6 +75,14 @@ async function getText(url:string){
 
 function asDate(value?:string|null){if(!value)return null;const date=new Date(value);return Number.isNaN(date.getTime())?null:date}
 
+function safeExternalUrl(value:string|undefined,baseUrl:string){
+  if(!value)return undefined;
+  try{
+    const parsed=new URL(value,baseUrl);
+    return parsed.protocol==="https:"&&!parsed.username&&!parsed.password?parsed.toString():undefined;
+  }catch{return undefined}
+}
+
 async function scrapeSource(source:ScrapeSourceConfig){
   const started=Date.now();
   const run=await db.scrapeRun.create({data:{sourceKey:source.key,status:"RUNNING"}});
@@ -84,7 +96,7 @@ async function scrapeSource(source:ScrapeSourceConfig){
       for(const row of rows.slice(0,500)){
         if(!isRecord(row))continue;
         const externalKey=String(row.id??row.url??row.slug??JSON.stringify(row));
-        items.push({externalKey,title:String(row.title??row.name??externalKey),url:stringValue(row.url),publishedAt:asDate(stringValue(row.publishedAt??row.date)),excerpt:stringValue(row.excerpt),content:stringValue(row.content),payload:row as Prisma.InputJsonValue});
+        items.push({externalKey,title:String(row.title??row.name??externalKey),url:safeExternalUrl(stringValue(row.url),source.url),publishedAt:asDate(stringValue(row.publishedAt??row.date)),excerpt:stringValue(row.excerpt),content:stringValue(row.content),payload:row as Prisma.InputJsonValue});
       }
     }else{
       const $=load(text,source.kind==="rss"?{xml:true}:undefined);
@@ -97,8 +109,8 @@ async function scrapeSource(source:ScrapeSourceConfig){
         const rawDate=dateElement.first().attr("datetime")||dateElement.first().text().trim();
         const image=(source.imageSelector?root.find(source.imageSelector):root.find("img[src]")).first().attr("src");
         const excerpt=root.find("description, summary, .excerpt, p").first().text().trim();
-        const absoluteUrl=href?new URL(href,source.url).toString():undefined;
-        const absoluteImage=image?new URL(image,source.url).toString():undefined;
+        const absoluteUrl=safeExternalUrl(href,source.url);
+        const absoluteImage=safeExternalUrl(image,source.url);
         const externalKey=absoluteUrl||title;
         if(externalKey)items.push({externalKey,title:title||externalKey,url:absoluteUrl,publishedAt:asDate(rawDate),imageUrl:absoluteImage,excerpt});
       });
@@ -151,9 +163,11 @@ async function syncGitHub(){
 export function validateScraperConfig(){
   const sources=parseEnvSources();
   if(sources.length&&!process.env.SCRAPER_ALLOWED_HOSTS)throw new Error("SCRAPER_ALLOWED_HOSTS wajib diisi ketika ada scraper source.");
+  if(sources.length>10)throw new Error("Maksimal 10 scraper source boleh dikonfigurasi.");
   const seenKeys=new Set<string>();
   for(const source of sources){
-    if(!source.key||!source.url)throw new Error("Setiap scraper source wajib memiliki key dan url.");
+    if(!/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(source.key)||!source.url)throw new Error("Setiap scraper source wajib memiliki key valid (huruf, angka, _ atau -) dan URL.");
+    if(!source.name.trim()||source.name.length>120)throw new Error(`Nama scraper tidak valid: ${source.key}`);
     if(seenKeys.has(source.key))throw new Error(`Key scraper duplikat: ${source.key}`);
     seenKeys.add(source.key);
     allowedHost(source.url);
