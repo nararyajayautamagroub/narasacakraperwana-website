@@ -34,6 +34,16 @@ Website PO Virtual / Virtual Transportation Community NARASA CAKRA PERWANA.
 - Configure `OPENAI_API_KEY` and optionally `OPENAI_MODEL` in deployment environment; never expose the key in client code
 - AI requests return a clear unavailable response when the key is not configured
 
+## Store, checkout, and member IDs
+
+- Store page at `/shop` with a cart and server-side price calculation
+- Order IDs are unique and payment expires 10 minutes after checkout
+- Order status endpoint at `/api/orders/{transactionId}` refreshes expiry status without caching
+- Manual QRIS display via `NEXT_PUBLIC_QRIS_IMAGE_URL` and WhatsApp confirmation link via `NEXT_PUBLIC_WHATSAPP_ORDER_NUMBER`
+- QRIS payment is manual until a payment gateway webhook or verified admin workflow is configured; the website must not claim a transfer is paid automatically
+- Driver and passenger registration at `/identities`, with generated IDs `NCRP-DRV-YYYY-XXXXXXXX` and `NCRP-PSG-YYYY-XXXXXXXX`
+- New Prisma models require `npx prisma db push` or a reviewed production migration before these endpoints can persist data
+
 ## Ten languages
 
 - 🇮🇩 Bahasa Indonesia
@@ -137,4 +147,4 @@ npm run check
 npm run dev
 ```
 
-For full production deployment, set `DATABASE_URL`, NextAuth secrets, Google OAuth credentials, GitHub token, admin secrets, and scraper configuration.
+For full production deployment, set `DATABASE_URL`, NextAuth secrets, Google OAuth credentials, GitHub token, admin secrets, scraper configuration, `OPENAI_API_KEY`, and optionally `OPENAI_MODEL`, `NEXT_PUBLIC_QRIS_IMAGE_URL`, and `NEXT_PUBLIC_WHATSAPP_ORDER_NUMBER`. Run a reviewed Prisma migration (or `npx prisma db push` in a controlled environment) before enabling the new order and identity endpoints.
