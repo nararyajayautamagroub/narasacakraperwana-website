@@ -20,7 +20,7 @@ export default function ShopPage(){
  const total=useMemo(()=>catalog.reduce((sum,item)=>sum+item.price*(cart[item.id]||0),0),[cart]);
  const qrUrl=process.env.NEXT_PUBLIC_QRIS_IMAGE_URL;
  const waNumber=(process.env.NEXT_PUBLIC_WHATSAPP_ORDER_NUMBER||"").replace(/\D/g,"");
- useEffect(()=>{setNow(Date.now());const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer)},[]);
+ useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer)},[]);
  const transactionId=order?.transactionId;const orderStatus=order?.status;
  useEffect(()=>{if(!transactionId||orderStatus!=="PENDING")return;let live=true;const poll=async()=>{try{const r=await fetch("/api/orders/"+transactionId,{cache:"no-store"});const d=await r.json();if(live&&r.ok)setOrder(old=>old?{...old,...d}:null)}catch{/* Keep the last known status while the network is unavailable. */}};const timer=setInterval(poll,5000);return()=>{live=false;clearInterval(timer)}},[transactionId,orderStatus]);
  const remaining=order?Math.max(0,Math.floor((new Date(order.paymentExpiresAt).getTime()-now)/1000)):0;
