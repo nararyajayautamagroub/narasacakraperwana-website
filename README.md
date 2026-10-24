@@ -107,7 +107,10 @@ Safety:
 - HTTPS only
 - response timeout
 - response size limit
-- configurable host allowlist
+- configurable HTTPS host allowlist; every redirect target is re-validated
+- maximum 10 configured sources, unique source keys, bounded timeout/response size
+- extracted item/image links are stored only when they resolve to HTTPS URLs without embedded credentials
+- each source records its own success/error state so a failed source does not stop later configured sources
 - database persistence
 - run history
 - dry-run configuration validation
@@ -167,4 +170,4 @@ GitHub Actions workflow `.github/workflows/refresh-live-data.yml` requests the p
 - `WEBSITE_URL`: deployed site origin, for example `https://your-domain.example`
 - `CRON_SECRET`: the same strong secret configured on the deployment as `CRON_SECRET` or `SCRAPER_RUN_SECRET`
 
-The refresh only updates sources configured in `SCRAPER_SOURCES` and only as fresh as those upstream sources. It is not a guarantee that every public value is accurate or truly real-time. If the secrets are missing, the workflow skips safely. New commits pushed to `main` automatically trigger the CI workflow; this project does not automatically invent or commit unreviewed features.
+Configure up to 10 independent sources in `SCRAPER_SOURCES`; the runner records per-source failures and continues with the remaining sources. Scraped links are restricted to HTTPS. The AI assistant is not used to fabricate replacement facts when a source fails; it can only explain/summarize available data when its API is configured. The refresh only updates sources configured in `SCRAPER_SOURCES` and only as fresh as those upstream sources. It is not a guarantee that every public value is accurate or truly real-time. If the secrets are missing, the workflow skips safely. New commits pushed to `main` automatically trigger the CI workflow; this project does not automatically invent or commit unreviewed features.
