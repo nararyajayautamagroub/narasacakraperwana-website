@@ -11,7 +11,7 @@ const catalog={
   "driver-registration":{name:"Driver Registration ID",price:15000},
   "community-membership":{name:"Community Membership",price:25000},
   "digital-service":{name:"Digital Service",price:30000}
-} as const;
+} as const;\ntype ProductId=keyof typeof catalog;
 const schema=z.object({
   name:z.string().trim().min(2).max(100),
   phone:z.string().trim().regex(/^[0-9+(). -]{8,20}$/),
@@ -24,7 +24,7 @@ export async function POST(request:Request){
   try{body=await request.json();}catch{return NextResponse.json({error:"Format data tidak valid."},{status:400});}
   const parsed=schema.safeParse(body);
   if(!parsed.success)return NextResponse.json({error:"Data checkout tidak valid. Periksa nama, nomor telepon, dan keranjang."},{status:400});
-  const merged=new Map<string,number>();
+  const merged=new Map<ProductId,number>();
   for(const item of parsed.data.items)merged.set(item.id,Math.min(10,(merged.get(item.id)||0)+item.quantity));
   const items=Array.from(merged.entries()).map(([id,quantity])=>({id,name:catalog[id].name,unitPrice:catalog[id].price,quantity,lineTotal:catalog[id].price*quantity}));
   const total=items.reduce((sum,item)=>sum+item.lineTotal,0);
