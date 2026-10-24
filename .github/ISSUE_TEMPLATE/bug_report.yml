@@ -1,0 +1,63 @@
+name: Bug report
+description: Report a reproducible problem on the Narasa Cakra Perwana website.
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not include passwords, API keys, payment secrets, or other personal information.
+  - type: input
+    id: page
+    attributes:
+      label: Page or feature
+      description: Which page or feature is affected?
+      placeholder: /shop, /ai, /identities
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: Android + Chrome, Windows + Firefox
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: List the steps that trigger the issue.
+      placeholder: |
+        1. Open ...
+        2. Tap ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact
+      options:
+        - Cosmetic
+        - Feature partially broken
+        - Feature unusable
+        - Security or payment concern
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshot or error message (optional)
+      description: Remove personal information before attaching evidence.
