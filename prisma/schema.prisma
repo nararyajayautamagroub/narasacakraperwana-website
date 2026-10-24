@@ -233,3 +233,59 @@ model ScrapedItem {
   @@unique([sourceKey, externalKey])
   @@index([sourceKey, lastSeenAt])
 }
+
+
+enum OrderStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  transactionId     String      @unique
+  customerName      String
+  customerPhone     String
+  customerEmail     String?
+  items             Json
+  subtotal          Int
+  total             Int
+  status            OrderStatus @default(PENDING)
+  paymentMethod     String      @default("QRIS_MANUAL")
+  paymentExpiresAt  DateTime
+  paidAt            DateTime?
+  whatsappNotifiedAt DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([status, paymentExpiresAt])
+  @@index([createdAt])
+}
+
+model PassengerProfile {
+  id          String   @id @default(cuid())
+  passengerId String   @unique
+  fullName    String
+  phone       String
+  email       String?
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([fullName])
+}
+
+model DriverProfile {
+  id          String   @id @default(cuid())
+  driverId    String   @unique
+  fullName    String
+  phone       String
+  licenseType String   @default("VIRTUAL")
+  simulator   String   @default("BUSSID")
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([fullName])
+}
