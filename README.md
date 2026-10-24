@@ -40,7 +40,7 @@ Website PO Virtual / Virtual Transportation Community NARASA CAKRA PERWANA.
 - Order IDs are unique and payment expires 10 minutes after checkout
 - Order status endpoint at `/api/orders/{transactionId}` refreshes expiry status without caching
 - Manual QRIS display via `NEXT_PUBLIC_QRIS_IMAGE_URL` and WhatsApp confirmation link via `NEXT_PUBLIC_WHATSAPP_ORDER_NUMBER`
-- QRIS payment is manual until a payment gateway webhook or verified admin workflow is configured; the website must not claim a transfer is paid automatically
+- QRIS payment is manual until a payment gateway webhook or verified admin workflow is configured; the website must not claim a transfer is paid automatically\n- Protected payment webhook adapter at `/api/payments/webhook` accepts only authenticated `paid` events, checks the exact IDR amount, rejects expired orders, and handles repeat notifications idempotently. Configure `PAYMENT_WEBHOOK_SECRET` (minimum 32 characters) and map the real payment provider’s verified server-to-server event to this adapter before enabling live automatic verification. This generic endpoint is not itself a QRIS/payment provider integration.
 - Driver and passenger registration at `/identities`, with generated IDs `NCRP-DRV-YYYY-XXXXXXXX` and `NCRP-PSG-YYYY-XXXXXXXX`
 - New Prisma models require `npx prisma db push` or a reviewed production migration before these endpoints can persist data
 
@@ -148,3 +148,4 @@ npm run dev
 ```
 
 For full production deployment, set `DATABASE_URL`, NextAuth secrets, Google OAuth credentials, GitHub token, admin secrets, scraper configuration, `OPENAI_API_KEY`, and optionally `OPENAI_MODEL`, `NEXT_PUBLIC_QRIS_IMAGE_URL`, and `NEXT_PUBLIC_WHATSAPP_ORDER_NUMBER`. Run a reviewed Prisma migration (or `npx prisma db push` in a controlled environment) before enabling the new order and identity endpoints.
+\n\n## Payment webhook adapter\n\nSet `PAYMENT_WEBHOOK_SECRET` to a unique random secret of at least 32 characters. A payment provider integration must validate the provider’s own webhook signature first, then send a server-to-server `POST /api/payments/webhook` request with `Authorization: Bearer <PAYMENT_WEBHOOK_SECRET>` and JSON containing `transactionId`, `status: "paid"`, `amount` (integer rupiah), `currency: "IDR"`, and `providerReference`. Never call this endpoint directly from the browser. The adapter checks order amount and expiry, and is idempotent for already-paid transactions. It does not replace the provider’s signature verification or create a merchant QRIS account.\n
