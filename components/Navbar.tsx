@@ -13,12 +13,12 @@ export function Navbar({initialLocale="id"}:{initialLocale?:Locale}){
   return <header className="nav">
     <div className="container nav-inner">
       <Link href="/" className="brand" onClick={close}><span className="brand-mark">N</span><span>NARASA CAKRA PERWANA</span></Link>
-      <nav className="nav-links" aria-label="Navigasi utama">{links.slice(1).map(([href,key])=><Link key={href} href={href}>{t[key]}</Link>)}</nav>
+      <nav className="nav-links" aria-label="Navigasi utama">{links.slice(1).map(([href,key])=><Link key={href} href={href}>{t[key]}</Link>)}<Link href="/shop">Store</Link><Link href="/ai">AI</Link><Link href="/identities">IDs</Link></nav>
       <div className="nav-actions"><LocaleSwitcher current={locale}/><UserMenu locale={locale}/><button className="hamburger btn btn-primary" type="button" aria-label={open?"Tutup menu":"Buka menu"} aria-expanded={open} onClick={()=>setOpen(v=>!v)}>=</button></div>
     </div>
     <div className={"mobile-panel "+(open?"is-open":"")} aria-hidden={!open}>
       <div className="container mobile-panel-inner">
-        {links.map(([href,key])=><Link key={href} href={href} onClick={close}>{t[key]}</Link>)}
+        {links.map(([href,key])=><Link key={href} href={href} onClick={close}>{t[key]}</Link>)}<Link href="/shop" onClick={close}>Store</Link><Link href="/ai" onClick={close}>AI Assistant</Link><Link href="/identities" onClick={close}>Driver & Passenger IDs</Link>
         <div className="mobile-tools"><LocaleSwitcher current={locale}/><UserMenu locale={locale}/></div>
       </div>
     </div>
