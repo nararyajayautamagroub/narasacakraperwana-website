@@ -11,7 +11,8 @@ const catalog={
   "driver-registration":{name:"Driver Registration ID",price:15000},
   "community-membership":{name:"Community Membership",price:25000},
   "digital-service":{name:"Digital Service",price:30000}
-} as const;\ntype ProductId=keyof typeof catalog;
+} as const;
+type ProductId=keyof typeof catalog;
 const schema=z.object({
   name:z.string().trim().min(2).max(100),
   phone:z.string().trim().regex(/^[0-9+(). -]{8,20}$/),
