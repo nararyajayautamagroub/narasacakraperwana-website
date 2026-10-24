@@ -27,13 +27,45 @@ function allowedHost(url:string){
 }
 
 async function getText(url:string){
-  allowedHost(url);
-  const response=await fetch(url,{headers:{"user-agent":USER_AGENT,"accept":"text/html,application/json,application/xml,text/xml;q=0.9,*/*;q=0.8"},signal:AbortSignal.timeout(timeoutMs),cache:"no-store"});
+  let currentUrl=url;
+  let response:Response|undefined;
+  // Validate every redirect target; default fetch redirect handling can bypass the host allowlist.
+  for(let redirects=0;redirects<=5;redirects++){
+    allowedHost(currentUrl);
+    response=await fetch(currentUrl,{headers:{"user-agent":USER_AGENT,"accept":"text/html,application/json,application/xml,text/xml;q=0.9,*/*;q=0.8"},signal:AbortSignal.timeout(timeoutMs),cache:"no-store",redirect:"manual"});
+    if(![301,302,303,307,308].includes(response.status))break;
+    const location=response.headers.get("location");
+    if(!location)throw new Error("Redirect tidak memiliki lokasi tujuan.");
+    if(redirects===5)throw new Error("Batas redirect scraper terlampaui.");
+    currentUrl=new URL(location,currentUrl).toString();
+    await response.body?.cancel();
+  }
+  if(!response)throw new Error("Scraper tidak menerima respons.");
   if(!response.ok)throw new Error(`HTTP ${response.status}`);
   const length=Number(response.headers.get("content-length")||0);
   if(length>maxBytes)throw new Error("Response terlalu besar.");
-  const text=await response.text();
-  if(new TextEncoder().encode(text).byteLength>maxBytes)throw new Error("Response melebihi batas ukuran.");
+
+  // Stream with a hard byte limit instead of buffering an unbounded body in memory.
+  if(!response.body) return {response,text:""};
+  const reader=response.body.getReader();
+  const decoder=new TextDecoder();
+  let bytes=0;
+  let text="";
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      bytes+=value.byteLength;
+      if(bytes>maxBytes){
+        await reader.cancel();
+        throw new Error("Response melebihi batas ukuran.");
+      }
+      text+=decoder.decode(value,{stream:true});
+    }
+    text+=decoder.decode();
+  }finally{
+    reader.releaseLock();
+  }
   return {response,text};
 }
 
@@ -119,8 +151,11 @@ async function syncGitHub(){
 export function validateScraperConfig(){
   const sources=parseEnvSources();
   if(sources.length&&!process.env.SCRAPER_ALLOWED_HOSTS)throw new Error("SCRAPER_ALLOWED_HOSTS wajib diisi ketika ada scraper source.");
+  const seenKeys=new Set<string>();
   for(const source of sources){
     if(!source.key||!source.url)throw new Error("Setiap scraper source wajib memiliki key dan url.");
+    if(seenKeys.has(source.key))throw new Error(`Key scraper duplikat: ${source.key}`);
+    seenKeys.add(source.key);
     allowedHost(source.url);
     if(!["html","rss","json"].includes(source.kind))throw new Error(`Jenis scraper tidak didukung: ${source.kind}`);
   }
