@@ -45,6 +45,10 @@ Website PO Virtual / Virtual Transportation Community NARASA CAKRA PERWANA.
 - Driver and passenger registration at `/identities`, with generated IDs `NCRP-DRV-YYYY-XXXXXXXX` and `NCRP-PSG-YYYY-XXXXXXXX`
 - New Prisma models require `npx prisma db push` or a reviewed production migration before these endpoints can persist data
 
+## Health and integration readiness
+
+The uncached `/api/health` endpoint checks database connectivity and required NextAuth configuration, and reports whether optional integrations are configured without exposing secret values. Diagnostics include AI, Google OAuth, GitHub access mode, scraper configuration, QRIS display, WhatsApp checkout, and payment-webhook configuration. Optional integrations may remain unconfigured during development; a healthy response does not mean those services have been end-to-end tested or that a payment provider is connected.
+
 ## Ten languages
 
 - 🇮🇩 Bahasa Indonesia
