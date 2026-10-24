@@ -26,6 +26,14 @@ Website PO Virtual / Virtual Transportation Community NARASA CAKRA PERWANA.
 - Health endpoint
 - ESLint + TypeScript + production build checks
 
+## AI Assistant
+
+- AI assistant page at `/ai` with project ID `NCRP-WEB-2026-0001`
+- Server-side OpenAI Responses API integration at `/api/ai`
+- Prompt validation and response size limit
+- Configure `OPENAI_API_KEY` and optionally `OPENAI_MODEL` in deployment environment; never expose the key in client code
+- AI requests return a clear unavailable response when the key is not configured
+
 ## Ten languages
 
 - 🇮🇩 Bahasa Indonesia
